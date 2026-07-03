@@ -17,6 +17,7 @@ import java.util.List;
 public class CsvExporter {
 
     private static final Logger log = LogManager.getLogger(CsvExporter.class);
+    private static final int MAX_TITLE_LENGTH = 80;
 
     public String exportProducts(List<Product> products, String fileName) {
         String filePath = "exports/" + fileName;
@@ -29,7 +30,7 @@ public class CsvExporter {
                 writer.println("ASIN,Title,Price,ImageURL");
 
                 for (Product p : products) {
-                    String safeTitle = p.getTitle().replace("\"", "\"\"");
+                    String safeTitle = formatTitleForCsv(p.getTitle()).replace("\"", "\"\"");
                     writer.println(String.format("\"%s\",\"%s\",\"%s\",\"%s\"", p.getAsin(), safeTitle, p.getPrice(), p.getImageUrl()));
                 }
             }
@@ -40,5 +41,23 @@ public class CsvExporter {
             log.error("Lỗi khi xuất file CSV {}", filePath, e);
             throw new RuntimeException("Lỗi khi xuất file CSV", e);
         }
+    }
+
+    String formatTitleForCsv(String title) {
+        if (title == null || title.isBlank()) {
+            return "";
+        }
+
+        String normalized = title.replaceAll("\\s+", " ").trim();
+        if (normalized.length() <= MAX_TITLE_LENGTH) {
+            return normalized;
+        }
+
+        int cut = normalized.lastIndexOf(' ', MAX_TITLE_LENGTH - 1);
+        if (cut < MAX_TITLE_LENGTH / 2) {
+            cut = MAX_TITLE_LENGTH;
+        }
+
+        return normalized.substring(0, cut).trim() + "...";
     }
 }
